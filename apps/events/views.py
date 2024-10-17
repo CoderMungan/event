@@ -5,6 +5,8 @@ from django.utils.timezone import now
 from datetime import timedelta
 from rest_framework.permissions import IsAuthenticated
 from django.core.exceptions import PermissionDenied
+from django.db import transaction, IntegrityError
+from rest_framework.exceptions import ValidationError
 
 
 class EventListCreate(generics.ListCreateAPIView):
@@ -13,8 +15,15 @@ class EventListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        event = serializer.save()
-        self.request.user.events.add(event)
+        try:
+            with transaction.atomic():
+                event = serializer.save()
+                self.request.user.events.add(event)
+        except IntegrityError as e:
+            print("Error : ", e)
+            raise ValidationError(
+                {"detail": "Event could not be created, please try again."}
+            )
 
 
 class EventRetrieveUpdateDelete(generics.RetrieveUpdateDestroyAPIView):
@@ -24,18 +33,35 @@ class EventRetrieveUpdateDelete(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         event = self.get_object()
+        try:
+            with transaction.atomic():
+                if not self.request.user.events.filter(pk=event.id).exists():
+                    raise PermissionDenied(
+                        "You do not have permission to update this event."
+                    )
 
-        if not self.request.user.events.filter(pk=event.id).exists():
-            raise PermissionDenied("You do not have permission to update this event.")
-
-        serializer.save()
+                serializer.save()
+        except IntegrityError as e:
+            print("Error : ", e)
+            raise ValidationError(
+                {"detail": "Event could not be updated, please try again."}
+            )
 
     def perform_destroy(self, instance):
 
-        if not self.request.user.events.filter(pk=instance.id).exists():
-            raise PermissionDenied("You do not have permission to delete this event.")
+        try:
+            with transaction.atomic():
+                if not self.request.user.events.filter(pk=instance.id).exists():
+                    raise PermissionDenied(
+                        "You do not have permission to delete this event."
+                    )
 
-        instance.delete()
+                instance.delete()
+        except IntegrityError as e:
+            print("Error : ", e)
+            raise ValidationError(
+                {"detail": "Event could not be deleted, please try again."}
+            )
 
 
 class UpcomingEvents(generics.ListAPIView):
