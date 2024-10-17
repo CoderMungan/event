@@ -69,14 +69,17 @@ class UpcomingEvents(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        # For the Turkey time added + 3 hour
         today = now() + timedelta(hours=3)
-        print("time :", today)
-        # For the Turkey time i added + 3 hour
+        today_date = today.date()
+        today_time = today.time()
         tomorrow = today + timedelta(days=1)
+        tomorrow_date = tomorrow.date()
 
         return Event.objects.filter(
-            date__gte=today.date(), date__lt=tomorrow.date(), time__gt=today.time()
-        )
+            date=today_date,
+            time__gte=today_time,
+        ) | Event.objects.filter(date=tomorrow_date, time__lt=today_time)
 
 
 class CategoryEvents(generics.ListAPIView):
