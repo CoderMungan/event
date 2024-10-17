@@ -103,7 +103,7 @@ GET /api/events/category/<str:category>/
 
 ### Extras
 
-If u want the delete past events every 1 min with checker u can be active the cronjob.
+If u want the delete past events every 1 min with cronjob u can be active the cronjob.
 
 `apps/events/cronjob.py`
 `apps/events/jobs.py`
