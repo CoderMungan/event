@@ -103,6 +103,17 @@ GET /api/events/category/<str:category>/
 
 ### Extras
 
+- Swagger:
+
+If you want the see api documentation use the swagger
+
+```bash
+http://127.0.0.1:8000/swagger/
+http://127.0.0.1:8000/redoc/
+```
+
+- CronJob:
+
 If u want the delete past events every 1 min with cronjob u can be active the cronjob.
 
 `apps/events/cronjob.py`
